@@ -13,17 +13,18 @@ export class AppComponent implements OnInit  {
   async ngOnInit() {
     let data = {
       id: "route_map",
-      startPosition: {latitude: 13.367797388285002, longitude:77.03707749682616},
+      startPosition: {latitude: '13.814163403421905', longitude: '100.55889009425664'},
     }
     this.LoadMap(data);
   }
 
   async play(){
     let routes = [
-      {latitude: 13.367797388285002, longitude:77.03707749682616},
-      {latitude:13.341074247677549, longitude:77.0394807561035},
-      {latitude:13.379153826558369, longitude: 77.08685929614256},
-      {latitude: 13.367797388285002, longitude:77.03707749682616}, 
+      {latitude: '13.814163403421905', longitude: '100.55889009425664'},
+      {latitude: '13.81860434745408', longitude: '100.55838432855528'},
+      {latitude: '13.821825103135906', longitude: '100.5582407713874'},
+      {latitude: '13.839532774826273', longitude: '100.55736630045539'},
+      {latitude: '13.905743578884298', longitude: '100.59324067814406'},
     ]
 
     await Promise.all(routes.map(async (route, index)=>{
@@ -43,7 +44,7 @@ export class AppComponent implements OnInit  {
   LoadMap(mapSetting) {
     let mapProp = {
       center: {lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)},
-      zoom: 12,
+      zoom: 13,
       fillColor: '#AA0000',
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       clickableIcons: true,
@@ -60,7 +61,8 @@ export class AppComponent implements OnInit  {
   };
 
   async playBack(mapSetting): Promise<void>{
-
+    this.map.setCenter({lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)});
+    
     if(mapSetting.positions){
         var listPois = [];
         var directions = [];
@@ -86,15 +88,19 @@ export class AppComponent implements OnInit  {
         this.markers = [];
 
         await Promise.all(listPois.map(async (value, i)=>{
-
+          
           if(i == mapSetting.order){
+
             const marker = new google.maps.Marker({
               position: new google.maps.LatLng(value[1], value[2]),
               map: this.map,
               icon: {
-                url: "../assets/images/bus.png",
-                scaledSize: new google.maps.Size(40, 40)
-              }
+                url: "../assets/images/car.png",
+                scaledSize: new google.maps.Size(20, 40),
+                rotation: i+1 == listPois.length?
+                this.getBearingBetweenTwoPoints(new google.maps.LatLng(listPois[i-1][1], listPois[i-1][2]), new google.maps.LatLng(value[1], value[2])): 
+                this.getBearingBetweenTwoPoints(new google.maps.LatLng(value[1], value[2]), new google.maps.LatLng(listPois[i+1][1], listPois[i+1][2])),
+              },
             });
 
             this.markers.push(marker);
@@ -126,15 +132,13 @@ export class AppComponent implements OnInit  {
 
                       directionsDisplay.setDirections(response);
 
-                      console.log(response)
+                      // console.log(response)
                   } else {
                       console.log('Impossible d afficher la route ' + status)
                   }
               });
             }
-        }))   
-
-        // this.map.fitBounds(bounds);
+        }))
     }
   }
 
@@ -142,5 +146,32 @@ export class AppComponent implements OnInit  {
     for (let i = 0; i < this.markers.length; i++) {
       this.markers[i].setMap(map);
     }
+  }
+
+  getBearingBetweenTwoPoints(start, end) {
+
+    var latStart = this.degreesToRadians(start.lat());
+    var lngStart = this.degreesToRadians(start.lng());
+    var latEnd = this.degreesToRadians(end.lat());
+    var longEnd = this.degreesToRadians(end.lng());
+
+    var dLon = (longEnd - lngStart);
+
+
+    var y = Math.sin(dLon) * Math.cos(latEnd);
+    var x = Math.cos(latStart) * Math.sin(latEnd) - Math.sin(latStart)
+            * Math.cos(latEnd) * Math.cos(dLon);
+
+    var radiansBearing = Math.atan2(y, x);
+
+    return this.radiansToDegrees(radiansBearing);
+  }
+
+  degreesToRadians(degrees) {
+    return degrees * Math.PI / 180.0;
+  }
+
+  radiansToDegrees(radians) {
+    return radians * 180.0 / Math.PI;
   }
 }
