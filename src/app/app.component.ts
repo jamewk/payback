@@ -24,7 +24,6 @@ export class AppComponent implements OnInit  {
       {latitude: '13.81860434745408', longitude: '100.55838432855528'},
       {latitude: '13.821825103135906', longitude: '100.5582407713874'},
       {latitude: '13.839532774826273', longitude: '100.55736630045539'},
-      {latitude: '13.905743578884298', longitude: '100.59324067814406'},
     ]
 
     await Promise.all(routes.map(async (route, index)=>{
@@ -97,6 +96,7 @@ export class AppComponent implements OnInit  {
               icon: {
                 url: "../assets/images/car.png",
                 scaledSize: new google.maps.Size(20, 40),
+                anchor: new google.maps.Point(15, 30),
                 rotation: i+1 == listPois.length?
                 this.getBearingBetweenTwoPoints(new google.maps.LatLng(listPois[i-1][1], listPois[i-1][2]), new google.maps.LatLng(value[1], value[2])): 
                 this.getBearingBetweenTwoPoints(new google.maps.LatLng(value[1], value[2]), new google.maps.LatLng(listPois[i+1][1], listPois[i+1][2])),
@@ -117,7 +117,7 @@ export class AppComponent implements OnInit  {
                   preserveViewport: true,
                   suppressMarkers: true,
                   polylineOptions: {
-                      strokeColor: 'green',
+                      strokeColor: 'blue',
                       strokeOpacity: 0.5,
                       strokeWeight: 5
                   }
@@ -131,8 +131,6 @@ export class AppComponent implements OnInit  {
                   if (status === 'OK') {
 
                       directionsDisplay.setDirections(response);
-
-                      // console.log(response)
                   } else {
                       console.log('Impossible d afficher la route ' + status)
                   }
