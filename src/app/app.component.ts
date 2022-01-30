@@ -1,5 +1,5 @@
 ///  <reference types="@types/googlemaps" />
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +9,8 @@ import { Component, OnInit } from '@angular/core';
 export class AppComponent implements OnInit  {
   map: google.maps.Map;
   markers: google.maps.Marker[] = [];
+
+  constructor(private _zone:NgZone) {}
 
   async ngOnInit() {
     let data = {
@@ -20,6 +22,13 @@ export class AppComponent implements OnInit  {
   }
 
   async play(){
+    let data = {
+      id: "route_map",
+      startPosition: {latitude: '14.126312482537813', longitude: '100.62014245507306'},
+      
+    }
+    this.LoadMap(data);
+    
     let routes = [
       {latitude: '14.126312482537813', longitude: '100.62014245507306'},
       {latitude: '14.12541770270331', longitude: '100.62017464157972'},
@@ -38,11 +47,13 @@ export class AppComponent implements OnInit  {
       }
     }));
 
-    console.log(paybackArr);
+
     await this.playBack(paybackArr);
   }
 
   LoadMap(mapSetting: { id: any; startPosition: any; }) {
+    this.map = null;
+
     let mapProp = {
       center: {lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)},
       zoom: 17,
