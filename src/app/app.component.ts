@@ -1,5 +1,5 @@
 ///  <reference types="@types/googlemaps" />
-import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +9,8 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 export class AppComponent implements OnInit  {
   map: google.maps.Map;
   markers: google.maps.Marker[] = [];
+  numberOfOrder: number = 1;
+
 
   constructor(private _zone:NgZone) {}
 
@@ -146,15 +148,15 @@ export class AppComponent implements OnInit  {
                       origin: startPoint,
                       destination: endPoint,
                       travelMode: google.maps.TravelMode.DRIVING,
-                  }, function(response: any, status: string) {
-                      if (status === 'OK') {
-                        console.log('order: ', setIndex+ 1)
-                        console.log('res: ', response)
+                    }, (response, status) => this._zone.run(() => {
+
+                      if (status === google.maps.DirectionsStatus.OK) {
+                        this.numberOfOrder = setIndex+ 1;
                         directionsDisplay.setDirections(response);
-                      } else {
+                      }else {
                         console.log('Impossible d afficher la route ' + status)
                       }
-                  })
+                    }));
                   }, 1000);
                 }
               }));
