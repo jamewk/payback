@@ -1,5 +1,6 @@
 ///  <reference types="@types/googlemaps" />
 import { Component, NgZone, OnInit } from '@angular/core';
+import { MatSliderChange } from '@angular/material/slider';
 
 @Component({
   selector: 'app-root',
@@ -76,7 +77,8 @@ export class AppComponent implements OnInit  {
   };
 
   async playBack(paybackArr: Array<any>): Promise<void>{
-
+    console.log(paybackArr);
+    
     await Promise.all(paybackArr.map(async (mapSetting, setIndex)=>{
       var directionsService = new google.maps.DirectionsService;
       var directionsDisplay = new google.maps.DirectionsRenderer({
@@ -205,5 +207,10 @@ export class AppComponent implements OnInit  {
 
   radiansToDegrees(radians: number) {
     return radians * 180.0 / Math.PI;
+  }
+
+
+  onInputChange(event: MatSliderChange) {
+    console.log(event.value);
   }
 }
