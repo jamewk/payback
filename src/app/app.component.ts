@@ -54,6 +54,7 @@ export class AppComponent implements OnInit  {
 
   LoadMap(mapSetting: { id: any; startPosition: any; }) {
     this.map = null;
+    this.totalKm = 0;
 
     let mapProp = {
       center: {lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)},
@@ -90,6 +91,7 @@ export class AppComponent implements OnInit  {
       });
       
       setTimeout(async () => {
+
         this.map.setCenter({lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)});
     
         if(mapSetting.positions){
@@ -167,7 +169,8 @@ export class AppComponent implements OnInit  {
               }
             }));
         }
-      },setIndex * 1000);
+
+      }, setIndex * 1000);
     }));
   }
 
