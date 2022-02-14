@@ -78,7 +78,7 @@ export class AppComponent implements OnInit  {
 
   async playBack(paybackArr: Array<any>): Promise<void>{
     console.log(paybackArr);
-    
+
     await Promise.all(paybackArr.map(async (mapSetting, setIndex)=>{
       var directionsService = new google.maps.DirectionsService;
       var directionsDisplay = new google.maps.DirectionsRenderer({
@@ -174,6 +174,12 @@ export class AppComponent implements OnInit  {
 
       }, setIndex * 1000);
     }));
+  }
+
+  stop(){
+    console.log(this.numberOfOrder);
+
+    this.initMap();
   }
 
   setMapOnAll(map: google.maps.Map | null) {
