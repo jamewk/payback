@@ -159,7 +159,7 @@ export class AppComponent implements OnInit  {
             }, (response, status) => this._zone.run(() => {
 
               if (status === google.maps.DirectionsStatus.OK) {
-
+                this.numberOfOrder = index+1;
                 this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
 
                 directionsDisplay.setDirections(response);
@@ -188,7 +188,6 @@ export class AppComponent implements OnInit  {
 
           this.markers.push(marker);
           this.setMapOnAll(this.map);
-          this.numberOfOrder = index+1;
         }
       }));
     }
