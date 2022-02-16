@@ -28,7 +28,7 @@ export class AppComponent implements OnInit  {
   initMap(){
     let data = {
       id: "route_map",
-      startPosition: {latitude: '14.126312482537813', longitude: '100.62014245507306'},
+      startPosition: {latitude: '42.42679066670903', longitude: '-83.29210638999939'},
       
     }
     this.LoadMap(data);
@@ -40,12 +40,11 @@ export class AppComponent implements OnInit  {
     }
     
     let routes = [
-      {latitude: '14.126312482537813', longitude: '100.62014245507306'},
-      {latitude: '14.12541770270331', longitude: '100.62017464157972'},
-      {latitude: '14.125344871631786', longitude: '100.62096857541063'},
-      {latitude: '14.125324062749923', longitude: '100.62184833992593'},
-      {latitude: '14.125376084950998', longitude: '100.62325381738333'},
-      {latitude: '14.125324062749923', longitude: '100.62385463217429'},
+      {latitude: '42.42679066670903', longitude: '-83.29210638999939'},
+      {latitude: '42.42300508749226', longitude: '-83.29679489135742'},
+      {latitude: '42.42304468678425', longitude: '-83.29434871673584'},
+      {latitude: '42.424882066428424', longitude: '-83.2944130897522'},
+      {latitude: '42.42495334300206', longitude: '-83.29203128814697'},
     ]
 
     let paybackArr = await Promise.all(routes.map(async (route, index)=>{
@@ -67,7 +66,7 @@ export class AppComponent implements OnInit  {
 
     let mapProp = {
       center: {lat: +parseFloat(mapSetting.startPosition.latitude), lng: +parseFloat(mapSetting.startPosition.longitude)},
-      zoom: 17,
+      zoom: 15,
       fillColor: '#AA0000',
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       clickableIcons: true,
@@ -98,7 +97,7 @@ export class AppComponent implements OnInit  {
         this.setPoint(paybackArr, paybackArr.length - this.timeLeft);
         this.timeLeft--;
       }
-    }, 1000);
+    }, 2000);
   }
 
   async setPoint(paybackArr, index: number){
@@ -169,7 +168,7 @@ export class AppComponent implements OnInit  {
                 console.log('Impossible d afficher la route ' + status)
               }
             }));
-          }, 1000);
+          }, 2000);
 
           const marker = new google.maps.Marker({
             position: new google.maps.LatLng(value[1], value[2]),
@@ -203,7 +202,6 @@ export class AppComponent implements OnInit  {
   }
 
   pauseTimer() {
-    // clearTimeout(this.timeout);
     clearInterval(this.interval);
   }
 
