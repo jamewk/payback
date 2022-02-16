@@ -15,9 +15,9 @@ export class AppComponent implements OnInit  {
   totalKm: number = 0;
 
   timeLeft: number = 0;
-  interval;
-  timeout;
+  interval = null;
   subscribeTimer: any;
+  time:  number = 1000;
 
   constructor(private _zone:NgZone) {}
 
@@ -88,16 +88,16 @@ export class AppComponent implements OnInit  {
     if(this.timeLeft == 0){
       this.timeLeft = paybackArr.length;
     }
-    this.interval = setInterval(() => {
+    this.interval = setInterval(async () => {
 
       if (this.timeLeft == 0) {
         this.pauseTimer();
       } else if (this.timeLeft > 0) {
 
-        this.setPoint(paybackArr, paybackArr.length - this.timeLeft);
+        await this.setPoint(paybackArr, paybackArr.length - this.timeLeft);
         this.timeLeft--;
       }
-    }, 2000);
+    }, this.time);
   }
 
   async setPoint(paybackArr, index: number){
@@ -136,57 +136,62 @@ export class AppComponent implements OnInit  {
             );
       }));
 
-      this.setMapOnAll(null);
-      this.markers = [];
-
       await Promise.all(listPois.map(async (value, i)=>{
         
         if(i == paybackArr[index].order){
 
-          this.timeout = setTimeout(() => {
-            if(directions[i] == undefined){
-              return;
+          if(directions[i] == undefined){
+            return;
+          }
+
+          var startPoint = new google.maps.LatLng(directions[i]['departLat'], directions[i]['departLng']);
+          var endPoint = new google.maps.LatLng(directions[i]['arriveeLat'], directions[i]['arriveeLng']);
+
+          directionsService.route({
+            origin: startPoint,
+            destination: endPoint,
+            travelMode: google.maps.TravelMode.DRIVING,
+          }, (response, status) => this._zone.run(async () => {
+
+            if (status === google.maps.DirectionsStatus.OK) {
+
+              this.numberOfOrder = index+1;
+              this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
+
+              directionsDisplay.setDirections(response);
+
+              // console.log(response.routes[0].overview_path);
+              let average = this.time/ response.routes[0].overview_path.length;
+
+              await Promise.all(response.routes[0].overview_path.map(async (item, index)=>{
+                setTimeout(async () => {
+                  this.setMapOnAll(null);
+                  this.markers = [];
+
+                  const marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(item.lat(), item.lng()),
+                    map: this.map,
+                    icon: {
+                      path: "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z",
+                      scale: .7,
+                      strokeColor: 'white',
+                      strokeWeight: .10,
+                      fillOpacity: 1,
+                      fillColor: '#404040',
+                      anchor: new google.maps.Point(10, 30),
+                      rotation: index+1 == response.routes[0].overview_path.length?this.getBearingBetweenTwoPoints(new google.maps.LatLng(response.routes[0].overview_path[index-1].lat(), response.routes[0].overview_path[index-1].lng()), new google.maps.LatLng(item.lat(), item.lng())): this.getBearingBetweenTwoPoints(new google.maps.LatLng(item.lat(), item.lng()), new google.maps.LatLng(response.routes[0].overview_path[index+1].lat(), response.routes[0].overview_path[index+1].lng()))
+                    },
+                  });
+
+                  this.markers.push(marker);
+                  await this.setMapOnAll(this.map);
+
+                }, index * average);
+              }));
+            }else {
+              console.log('Impossible d afficher la route ' + status)
             }
-
-            var startPoint = new google.maps.LatLng(directions[i]['departLat'], directions[i]['departLng']);
-            var endPoint = new google.maps.LatLng(directions[i]['arriveeLat'], directions[i]['arriveeLng']);
-
-            directionsService.route({
-              origin: startPoint,
-              destination: endPoint,
-              travelMode: google.maps.TravelMode.DRIVING,
-            }, (response, status) => this._zone.run(() => {
-
-              if (status === google.maps.DirectionsStatus.OK) {
-                this.numberOfOrder = index+1;
-                this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
-
-                directionsDisplay.setDirections(response);
-
-                console.log(response)
-              }else {
-                console.log('Impossible d afficher la route ' + status)
-              }
-            }));
-          }, 2000);
-
-          const marker = new google.maps.Marker({
-            position: new google.maps.LatLng(value[1], value[2]),
-            map: this.map,
-            icon: {
-              path: "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z",
-              scale: .7,
-              strokeColor: 'white',
-              strokeWeight: .10,
-              fillOpacity: 1,
-              fillColor: '#404040',
-              anchor: new google.maps.Point(10, 30),
-              rotation: i+1 == listPois.length?this.getBearingBetweenTwoPoints(new google.maps.LatLng(listPois[i-1][1], listPois[i-1][2]), new google.maps.LatLng(value[1], value[2])): this.getBearingBetweenTwoPoints(new google.maps.LatLng(value[1], value[2]), new google.maps.LatLng(listPois[i+1][1], listPois[i+1][2])),
-            },
-          });
-
-          this.markers.push(marker);
-          this.setMapOnAll(this.map);
+          }));
         }
       }));
     }
@@ -205,7 +210,7 @@ export class AppComponent implements OnInit  {
     clearInterval(this.interval);
   }
 
-  setMapOnAll(map: google.maps.Map | null) {
+  async setMapOnAll(map: google.maps.Map | null) {
     for (let i = 0; i < this.markers.length; i++) {
       this.markers[i].setMap(map);
     }
