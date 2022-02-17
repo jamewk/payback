@@ -6,7 +6,7 @@
 
   <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
     <div class="btn-group me-2" role="group" aria-label="First group">
-      
+
       <button type="button" class="btn btn-outline-primary" (click)="play(action =='start'?'stop':'start')">
 
         <i class="fa fa-play px-3" *ngIf="action == 'stop'"></i>
@@ -17,6 +17,7 @@
   </div>
     
   <div id="route_map" class="my-2"></div>
+  
 
   <mat-slider class="w-100 text-primary primary px-0" min="0" max="4" step="1" thumbLabel [displayWith]="formatLabel" [value]="numberOfOrder" (input)="onInputChange($event)"></mat-slider>
 
