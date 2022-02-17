@@ -9,9 +9,10 @@ import { timer } from 'rxjs';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit  {
+  action: string = "stop";
   map: google.maps.Map;
   markers: google.maps.Marker[] = [];
-  numberOfOrder: number = 1;
+  numberOfOrder: number = 0;
   totalKm: number = 0;
 
   timeLeft: number = 0;
@@ -19,9 +20,24 @@ export class AppComponent implements OnInit  {
   subscribeTimer: any;
   time:  number = 1000;
 
+  routes = [];
+
+  formatLabel(value: number) {
+    return value;
+  }
+
   constructor(private _zone:NgZone) {}
 
   async ngOnInit() {
+        
+    this.routes = [
+      {latitude: '42.42679066670903', longitude: '-83.29210638999939'},
+      {latitude: '42.42300508749226', longitude: '-83.29679489135742'},
+      {latitude: '42.42304468678425', longitude: '-83.29434871673584'},
+      {latitude: '42.424882066428424', longitude: '-83.2944130897522'},
+      {latitude: '42.42495334300206', longitude: '-83.29203128814697'},
+    ]
+
     this.initMap();
   }
 
@@ -34,30 +50,29 @@ export class AppComponent implements OnInit  {
     this.LoadMap(data);
   }
 
-  async play(){
+  async play(action: string){
+    this.action = action;
+
+    if(action == 'stop'){
+      this.pauseTimer();
+
+      return;
+    }
+
     if(this.timeLeft == 0){
       this.initMap();
     }
-    
-    let routes = [
-      {latitude: '42.42679066670903', longitude: '-83.29210638999939'},
-      {latitude: '42.42300508749226', longitude: '-83.29679489135742'},
-      {latitude: '42.42304468678425', longitude: '-83.29434871673584'},
-      {latitude: '42.424882066428424', longitude: '-83.2944130897522'},
-      {latitude: '42.42495334300206', longitude: '-83.29203128814697'},
-    ]
 
-    let paybackArr = await Promise.all(routes.map(async (route, index)=>{
+    let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
       return {
         id: "route_map",
         startPosition: route,
-        positions: routes,
+        positions: this.routes,
         order: index
       }
     }));
 
-
-    await this.playBack(paybackArr);
+    this.playBack(paybackArr);
   }
 
   LoadMap(mapSetting: { id: any; startPosition: any; }) {
@@ -84,7 +99,6 @@ export class AppComponent implements OnInit  {
   };
 
   async playBack(paybackArr: Array<any>): Promise<void>{
-    console.log(paybackArr);
     if(this.timeLeft == 0){
       this.timeLeft = paybackArr.length;
     }
@@ -117,12 +131,7 @@ export class AppComponent implements OnInit  {
 
     if(paybackArr[index].positions){
 
-      var listPois = [];
       var directions = [];
-            
-      paybackArr[index].positions.map((route: { latitude: string; longitude: string; }, index: number)=>{
-        listPois.push([(index+1).toString(), parseFloat(route.latitude), parseFloat(route.longitude)]);
-      });
 
       await Promise.all(paybackArr[index].positions.map(async (value: { latitude: string; longitude: string; }, i: number)=>{
         if(i+1 != paybackArr[index].positions.length)
@@ -136,7 +145,7 @@ export class AppComponent implements OnInit  {
             );
       }));
 
-      await Promise.all(listPois.map(async (value, i)=>{
+      await Promise.all(paybackArr[index].positions.map(async (value, i)=>{
         
         if(i == paybackArr[index].order){
 
@@ -160,7 +169,6 @@ export class AppComponent implements OnInit  {
 
               directionsDisplay.setDirections(response);
 
-              // console.log(response.routes[0].overview_path);
               let average = this.time/ response.routes[0].overview_path.length;
 
               await Promise.all(response.routes[0].overview_path.map(async (item, index)=>{
@@ -198,15 +206,8 @@ export class AppComponent implements OnInit  {
 
   }
 
-  oberserableTimer() {
-    const source = timer(1000, 2000);
-    const abc = source.subscribe((val) => {
-      console.log(val, '-');
-      this.subscribeTimer = this.timeLeft - val;
-    });
-  }
-
   pauseTimer() {
+    this.action = 'stop';
     clearInterval(this.interval);
   }
 
@@ -244,7 +245,115 @@ export class AppComponent implements OnInit  {
   }
 
 
-  onInputChange(event: MatSliderChange) {
-    console.log(event.value);
+  async onInputChange(event: MatSliderChange) {
+    this.action = 'stop';
+
+    if(event.value > 0){
+      setTimeout(async () => {
+        this.initMap();
+      
+        let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
+          return {
+            id: "route_map",
+            startPosition: route,
+            positions: this.routes,
+            order: index
+          }
+        }));
+    
+    
+        this.setDirection(paybackArr, event.value);
+      }, 100);
+    }
+  }
+
+  async setDirection(paybackArr: Array<any>, selectValue: number){
+
+    paybackArr = paybackArr.filter((pay, index)=> index < selectValue);
+    
+    paybackArr.map(async (item, index)=>{
+      var directionsService = new google.maps.DirectionsService;
+      var directionsDisplay = new google.maps.DirectionsRenderer({
+        map: this.map,
+        preserveViewport: true,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: 'red',
+          strokeOpacity: 1,  
+          strokeWeight: 4,
+        }
+      });
+
+      if(paybackArr[index].positions){
+
+        var directions = [];
+  
+        await Promise.all(paybackArr[index].positions.map(async (value: { latitude: string; longitude: string; }, i: number)=>{
+          if(i+1 != paybackArr[index].positions.length)
+              directions.push(
+                  {
+                    departLat: parseFloat(value.latitude),
+                    departLng: parseFloat(value.longitude),
+                    arriveeLat: parseFloat(paybackArr[index].positions[i+1]?.latitude),
+                    arriveeLng: parseFloat(paybackArr[index].positions[i+1]?.longitude),
+                  }
+              );
+        }));
+  
+        await Promise.all(paybackArr[index].positions.map(async (value, i)=>{
+          
+          if(i == paybackArr[index].order){
+  
+            if(directions[i] == undefined){
+              return;
+            }
+  
+            var startPoint = new google.maps.LatLng(directions[i]['departLat'], directions[i]['departLng']);
+            var endPoint = new google.maps.LatLng(directions[i]['arriveeLat'], directions[i]['arriveeLng']);
+  
+            directionsService.route({
+              origin: startPoint,
+              destination: endPoint,
+              travelMode: google.maps.TravelMode.DRIVING,
+            }, (response, status) => this._zone.run(async () => {
+  
+              if (status === google.maps.DirectionsStatus.OK) {
+  
+                this.numberOfOrder = index+1;
+                this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
+  
+                directionsDisplay.setDirections(response);
+  
+                await Promise.all(response.routes[0].overview_path.map(async (item, index)=>{
+                  this.setMapOnAll(null);
+                  this.markers = [];
+
+                  const marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(item.lat(), item.lng()),
+                    map: this.map,
+                    icon: {
+                      path: "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z",
+                      scale: .7,
+                      strokeColor: 'white',
+                      strokeWeight: .10,
+                      fillOpacity: 1,
+                      fillColor: '#404040',
+                      anchor: new google.maps.Point(10, 30),
+                      rotation: index+1 == response.routes[0].overview_path.length?this.getBearingBetweenTwoPoints(new google.maps.LatLng(response.routes[0].overview_path[index-1].lat(), response.routes[0].overview_path[index-1].lng()), new google.maps.LatLng(item.lat(), item.lng())): this.getBearingBetweenTwoPoints(new google.maps.LatLng(item.lat(), item.lng()), new google.maps.LatLng(response.routes[0].overview_path[index+1].lat(), response.routes[0].overview_path[index+1].lng()))
+                    },
+                  });
+
+                  this.markers.push(marker);
+                  await this.setMapOnAll(this.map);
+                }));
+              }else {
+                console.log('Impossible d afficher la route ' + status)
+              }
+            }));
+          }
+        }));
+      }
+    })
+
   }
 }
