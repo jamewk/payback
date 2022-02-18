@@ -262,17 +262,17 @@ export class AppComponent implements OnInit  {
             order: index
           }
         }));
-    
-    
-        await this.setDirection(paybackArr, event.value);
-      }, 100);
+        this.setDirection(paybackArr, event.value);
+      }, 1000);
+    }else{
+      this.initMap();
     }
   }
 
   async setDirection(paybackArr: Array<any>, selectValue: number){
 
     paybackArr = paybackArr.filter((pay, index)=> index < selectValue);
-
+    
     await Promise.all(paybackArr.map(async (item, index)=>{
       var directionsService = new google.maps.DirectionsService;
       var directionsDisplay = new google.maps.DirectionsRenderer({
@@ -301,11 +301,11 @@ export class AppComponent implements OnInit  {
                   }
               );
         }));
-  
+    
         await Promise.all(paybackArr[index].positions.map(async (value, i)=>{
-          
+
           if(i == paybackArr[index].order){
-  
+
             if(directions[i] == undefined){
               return;
             }
@@ -317,34 +317,35 @@ export class AppComponent implements OnInit  {
               origin: startPoint,
               destination: endPoint,
               travelMode: google.maps.TravelMode.DRIVING,
-            }, (response, status) => this._zone.run(async () => {
-  
+            }, async (response, status) => await this._zone.run(async () => {
+
               if (status === google.maps.DirectionsStatus.OK) {
-        
+                if(i+ 1 === paybackArr.length){
+                  this.setMapOnAll(null);
+                  this.markers = [];
+  
+                  const marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(directions[i]['arriveeLat'], directions[i]['arriveeLng']),
+                    map: this.map,
+                    icon: {
+                      path: "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z",
+                      scale: .7,
+                      strokeColor: 'white',
+                      strokeWeight: .10,
+                      fillOpacity: 1,
+                      fillColor: '#404040',
+                      anchor: new google.maps.Point(10, 30),
+                      rotation: this.getBearingBetweenTwoPoints(new google.maps.LatLng(response.routes[0].overview_path[response.routes[0].overview_path.length-2].lat(), response.routes[0].overview_path[response.routes[0].overview_path.length-2].lng()), new google.maps.LatLng(response.routes[0].overview_path[response.routes[0].overview_path.length-1].lat(), response.routes[0].overview_path[response.routes[0].overview_path.length-1].lng()))
+                    },
+                  });
+  
+                  this.markers.push(marker);
+                  this.setMapOnAll(this.map);
+                }
+
                 this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
   
                 directionsDisplay.setDirections(response);
-  
-                this.setMapOnAll(null);
-                this.markers = [];
-
-                const marker = new google.maps.Marker({
-                  position: new google.maps.LatLng(response.routes[0].overview_path[response.routes[0].overview_path.length-1].lat(), response.routes[0].overview_path[response.routes[0].overview_path.length-1].lng()),
-                  map: this.map,
-                  icon: {
-                    path: "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z",
-                    scale: .7,
-                    strokeColor: 'white',
-                    strokeWeight: .10,
-                    fillOpacity: 1,
-                    fillColor: '#404040',
-                    anchor: new google.maps.Point(10, 30),
-                    rotation: this.getBearingBetweenTwoPoints(new google.maps.LatLng(response.routes[0].overview_path[response.routes[0].overview_path.length-2].lat(), response.routes[0].overview_path[response.routes[0].overview_path.length-2].lng()), new google.maps.LatLng(response.routes[0].overview_path[response.routes[0].overview_path.length-1].lat(), response.routes[0].overview_path[response.routes[0].overview_path.length-1].lng()))
-                  },
-                });
-
-                this.markers.push(marker);
-                await this.setMapOnAll(this.map);
               }else {
                 console.log('Impossible d afficher la route ' + status)
               }
