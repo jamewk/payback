@@ -62,7 +62,6 @@ export class AppComponent implements OnInit  {
       return;
     }
     if(this.numberOfStore > 0){
-      console.log(this.numberOfStore);
       
       let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
         return {
@@ -128,9 +127,11 @@ export class AppComponent implements OnInit  {
 
       if (this.timeLeft == 0) {
         this.pauseTimer();
+
+        this.numberOfStore = 0;
       } else if (this.timeLeft > 0) {
 
-        await this.setPoint(paybackArr, paybackArr.length - this.timeLeft);
+        this.setPoint(paybackArr, paybackArr.length - this.timeLeft);
         this.timeLeft--;
       }
     }, this.time);
@@ -185,8 +186,9 @@ export class AppComponent implements OnInit  {
           }, (response, status) => this._zone.run(async () => {
 
             if (status === google.maps.DirectionsStatus.OK) {
-              if(this.numberOfOrder > 0){
-                this.numberOfOrder = this.numberOfOrder+1;
+       
+              if(this.numberOfStore > 0){
+                this.numberOfOrder = this.numberOfStore+1;
               }else{
                 this.numberOfOrder = index+1;
               }
