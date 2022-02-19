@@ -15,6 +15,7 @@ export class AppComponent implements OnInit  {
   map: google.maps.Map;
   markers: google.maps.Marker[] = [];
   numberOfOrder: number = 0;
+  numberOfStore: number = 0;
   totalKm: number = 0;
 
   timeLeft: number = 0;
@@ -60,21 +61,40 @@ export class AppComponent implements OnInit  {
 
       return;
     }
+    if(this.numberOfStore > 0){
+      console.log(this.numberOfStore);
+      
+      let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
+        return {
+          id: "route_map",
+          startPosition: route,
+          positions: this.routes,
+          order: index
+        }
+      }));
 
-    if(this.timeLeft == 0){
-      this.initMap();
-    }
+      paybackArr = paybackArr.filter((pay, index)=> index >= this.numberOfStore);
+  
+      this.playBack(paybackArr);
 
-    let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
-      return {
-        id: "route_map",
-        startPosition: route,
-        positions: this.routes,
-        order: index
+    }else{
+      this.numberOfStore = 0; 
+
+      if(this.timeLeft == 0){
+        this.initMap();
       }
-    }));
-
-    this.playBack(paybackArr);
+  
+      let paybackArr = await Promise.all(this.routes.map(async (route, index)=>{
+        return {
+          id: "route_map",
+          startPosition: route,
+          positions: this.routes,
+          order: index
+        }
+      }));
+  
+      this.playBack(paybackArr);
+    }
   }
 
   LoadMap(mapSetting: { id: any; startPosition: any; }) {
@@ -165,8 +185,11 @@ export class AppComponent implements OnInit  {
           }, (response, status) => this._zone.run(async () => {
 
             if (status === google.maps.DirectionsStatus.OK) {
-
-              this.numberOfOrder = index+1;
+              if(this.numberOfOrder > 0){
+                this.numberOfOrder = this.numberOfOrder+1;
+              }else{
+                this.numberOfOrder = index+1;
+              }
               this.totalKm = this.totalKm + (response?.routes[0]?.legs[0]?.distance?.value / 1000);
 
               directionsDisplay.setDirections(response);
@@ -265,6 +288,8 @@ export class AppComponent implements OnInit  {
         this.setDirection(paybackArr, event.value);
       }, 1000);
     }else{
+      this.numberOfStore = 0;
+
       this.initMap();
     }
   }
@@ -355,6 +380,7 @@ export class AppComponent implements OnInit  {
       }
     }));
 
+    this.numberOfStore = paybackArr.length;
     this.numberOfOrder = paybackArr.length;
   }
 }
