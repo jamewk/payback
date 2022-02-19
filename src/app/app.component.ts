@@ -186,9 +186,8 @@ export class AppComponent implements OnInit  {
           }, (response, status) => this._zone.run(async () => {
 
             if (status === google.maps.DirectionsStatus.OK) {
-       
               if(this.numberOfStore > 0){
-                this.numberOfOrder = this.numberOfStore+1;
+                this.numberOfOrder = this.numberOfOrder+1;
               }else{
                 this.numberOfOrder = index+1;
               }
